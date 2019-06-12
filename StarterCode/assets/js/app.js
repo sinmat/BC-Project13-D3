@@ -1,157 +1,158 @@
 function makeResponsive() {
-  // Set up chart
-  var svgWidth = 960;
-  var svgHeight = 500;
-  var margin = {top: 20, right: 40, bottom: 60, left: 100};
-  var width = svgWidth - margin.left - margin.right;
-  var height = svgHeight - margin.top - margin.bottom;
+        
+    // Set up chart
+    var svgWidth = 860;
+    var svgHeight = 500;
 
-  // Create an SVG wrapper, append an SVG group that will hold our chart, and shift the latter by left and top margins.
-  var svg = d3.select('#scatter')
-    .append('svg')
-    .attr('width', svgWidth)
-    .attr('height', svgHeight)
-    .append('g')
-    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+    var margin = {top: 20, right: 40, bottom: 60, left: 100};
 
-  var chart = svg.append('g')
-  
-  // Append a div to the body to create tooltips, assign it a class
-  d3.select("#scatter").append("div").attr("class", "tooltip").style("opacity", 0);
+    var width = svgWidth - margin.left - margin.right;
+    var height = svgHeight - margin.top - margin.bottom;
 
-  // Retrieve data from CSV file and execute everything below
-  d3.csv("assets/data/data.csv").then(function(stateData) {
-    console.log(stateData); 
+    // Create an SVG wrapper
 
-    // Converting data to integers
+    var svg = d3.select('#scatter')
+        .append('svg')
+        .attr('width', svgWidth)
+        .attr('height', svgHeight)
+        
+    // Append an SVG group that will hold our chart, and shift the latter by left and top margins.
+
+    var chartGroup = svg.append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
     
-    stateData.forEach(function(data) {
-      data.poverty = +data.poverty;
-      data.healthcare = +data.healthcare;
+    // Retrieve data from CSV file and execute everything below
+
+    d3.csv("assets/data/data.csv").then(function(stateData) {
+        console.log(stateData); 
+
+        // Converting data to integers
+
+        stateData.forEach(function(data) {
+        data.poverty = +data.poverty;
+        data.healthcare = +data.healthcare;
+        data.state = data.state;
+        data.age = +data.age;
+        data.income = +data.income;
+        data.obesity = +data.obesity;
+        data.smoke = +data.smoke
+        });
+        
+        // Define scale functions
+
+        var xMin = d3.min(stateData,(d=>d.poverty-1));
+        var xMax = d3.max(stateData,(d=>d.poverty));
+        var yMin = d3.min(stateData,(d=>d.healthcare-1));
+        var yMax = d3.max(stateData,(d=>d.healthcare));
+        var xMin1 = d3.min(stateData,(d=>d.age));
+        var xMax1 = d3.max(stateData,(d=>d.age));
+        var yMin1 = d3.min(stateData,(d=>d.smokes));
+        var yMax1 = d3.max(stateData,(d=>d.smokes));
+        var xMin2 = d3.min(stateData,(d=>d.income));
+        var xMax2 = d3.max(stateData,(d=>d.income));
+        var yMin2 = d3.min(stateData,(d=>d.obesity));
+        var yMax2 = d3.max(stateData,(d=>d.obesity));
+    
+        var xScale = d3.scaleLinear()
+                .domain([xMin, xMax])
+                .range([0,width]);
+
+        var yScale = d3.scaleLinear()
+                .domain([yMin,yMax])
+                .range([height,0]);
+
+        // Create axis functions
+
+        var bottomAxis = d3.axisBottom(xScale);
+        var leftAxis = d3.axisLeft(yScale);
+
+        // Append Axes to the chart
+
+        chartGroup.append("g")
+                .attr("transform",`translate (0,${height})`)
+                .call(bottomAxis);
+
+        chartGroup.append("g")
+                .call(leftAxis);
+
+        
+        // Append circles to data points
+
+        var circleGroup = chartGroup.selectAll("circle")
+            .data(stateData)
+            .enter()
+            .append("circle")
+            .attr("cx",d=>xScale(d.poverty))
+            .attr("cy", d=>yScale(d.healthcare))
+            .attr("r", "10")
+            .attr("fill", "lightblue");
+
+        circleGroup = chartGroup.selectAll()
+            .data(stateData)
+            .enter()
+            .append("text")
+            .attr("x", d=> xScale(d.poverty))
+            .attr("y", d=> yScale(d.healthcare))
+            .style("font-size", "12px")
+            .style("text-anchor","middle")
+            .style("fill","white")
+            .text(d=>  d.abbr);
+            
+        // Initialize tool tip
+        
+        var toolTip = d3.tip()
+            .attr("class", "tooltip")
+            .offset([80, -60])
+            .style("display", "block")
+            .html(function(d) {
+                return (`${d.state} <br> Poverty : ${d.poverty} <br> Lack of Healthcare : ${d.healthcare}`)
+                
+                });
+
+        // Create tooltip in the chart
+        
+        chartGroup.call(toolTip);
+
+        // Create event listeners to display and hide the tooltip
+        
+        circleGroup.on("click", function(data){toolTip
+            .show(data,this)
+            .classed("active", true)
+        })
+
+        .on("mouseout", function(data, index) {toolTip
+            .hide(data)
+            .classed("inactive", true)
+            });
     });
-      
-      // Create scale functions
-      var yLinearScale = d3.scaleLinear().range([height, 0]);
-      var xLinearScale = d3.scaleLinear().range([0, width]);
+            
+    // Append y-axis label
+    chartGroup
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0-margin.left + 40)
+        .attr("x", 0 - height/2)
+        .attr("dy","1em")
+        .classed("axis-text", true)
+        .text("Lack of Healthcare (%)")
 
-      // Create axis functions
-      var bottomAxis = d3.axisBottom(xLinearScale);
-      var leftAxis = d3.axisLeft(yLinearScale);
+    // Append x-axis labels
+    chartGroup
+        .append("text")
+        .attr(
+            "transform", `translate(${width / 2}, ${(height + margin.top + 30)})`
+        )
+        .classed("axis-text", true)
+        .text("In Poverty (%)");
 
-      // Scale the domain
-      var xMin;
-      var xMax;
-      var yMin;
-      var yMax;
+};
 
-      xMin = d3.min(stateData, function(data) {
-          return +data.poverty * 0.95;
-      });
-
-      xMax = d3.max(stateData, function(data) {
-          return +data.poverty * 1.05;
-      });
-
-      yMin = d3.min(stateData, function(data) {
-          return +data.healthcare * 0.98;
-      });
-
-      yMax = d3.max(stateData, function(data) {
-          return +data.healthcare *1.02;
-      });
-      
-      xLinearScale.domain([xMin, xMax]);
-      yLinearScale.domain([yMin, yMax]);
-
-      
-      // Initialize tooltip 
-      var toolTip = d3
-          .tip()
-          .attr("class", "d3-tip")
-          .offset([80, -60])
-          .html(function(data) {
-              var stateName = data.state;
-              var pov = +data.poverty;
-              var healthcare = +data.healthcare;
-              return (
-                  stateName + '<br> Poverty: ' + pov + '% <br> Healthcare: ' + healthcare +'%'
-              );
-          });
-
-      // Create tooltip
-      chart.call(toolTip);
-
-      chart.selectAll("circle")
-          .data(stateData)
-          .enter()
-          .append("circle")
-          .attr("cx", function(data, index) {
-              return xLinearScale(data.poverty)
-          })
-          .attr("cy", function(data, index) {
-              return yLinearScale(data.healthcare)
-          })
-          .attr("r", "15")
-          .attr("fill", "lightblue")
-          // display tooltip on click
-          .on("mouseenter", function(data) {
-              toolTip.show(data);
-          })
-          // hide tooltip on mouseout
-          .on("mouseout", function(data, index) {
-              toolTip.hide(data);
-          });
-      
-      // Appending a label to each data point
-      chart.append("text")
-          .style("text-anchor", "middle")
-          .style("font-size", "12px")
-          .selectAll("tspan")
-          .data(stateData)
-          .enter()
-          .append("tspan")
-              .attr("x", function(data) {
-                  return xLinearScale(data.poverty - 0);
-              })
-              .attr("y", function(data) {
-                  return yLinearScale(data.healthcare - 0.2);
-              })
-              .text(function(data) {
-                  return data.abbr
-              });
-      
-      // Append an SVG group for the x-axis, then display x-axis 
-      chart
-          .append("g")
-          .attr('transform', `translate(0, ${height})`)
-          .call(bottomAxis);
-
-      // Append a group for y-axis, then display it
-      chart.append("g").call(leftAxis);
-
-      // Append y-axis label
-      chart
-          .append("text")
-          .attr("transform", "rotate(-90)")
-          .attr("y", 0-margin.left + 40)
-          .attr("x", 0 - height/2)
-          .attr("dy","1em")
-          .attr("class", "axis-text")
-          .text("Lack of Healthcare (%)")
-
-      // Append x-axis labels
-      chart
-          .append("text")
-          .attr(
-              "transform", `translate(${width / 2}, ${(height + margin.top + 30)})`
-          )   //attr("transform", `translate(${margin.left}, ${margin.top})`)
-          .attr("class", "axis-text")
-          .text("In Poverty (%)");
-      });
-}
-
-// When the browser loads, makeResponsive() is called.
 makeResponsive();
 
-// When the browser window is resized, responsify() is called.
+// Event listener for window resize. When the browser window is resized, makeResponsive() is called.
+
 d3.select(window).on("resize", makeResponsive);
+       
+
+    
+

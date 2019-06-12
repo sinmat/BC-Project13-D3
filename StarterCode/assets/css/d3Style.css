@@ -1,17 +1,17 @@
- /*.aText {
+.article {
   font-family: sans-serif;
   font-size: 16px;
   text-anchor: middle;
 }
 
-.active {
+.data-circle {
   font-weight: bold;
   fill: #000;
   transition: fill 0.3s ease-out;
   text-anchor: middle;
 }
 
-.inactive {
+.data-circle {
   font-weight: lighter;
   fill: #c9c9c9;
   transition: fill 0.3s ease-out;
@@ -24,7 +24,7 @@
 }
 
 /* font size dependent on radius, see app.js */
-/*.stateText {
+.stateText {
   font-family: sans-serif;
   fill: #fff;
   text-anchor: middle;
@@ -53,7 +53,7 @@
 }
 
 /* Mobile Rules */
-/*@media screen and (max-width: 530px) {
+@media screen and (max-width: 530px) {
   .stateText {
     display: none;
   }
@@ -75,4 +75,4 @@
   font-weight: bold;
   fill: #551aaf;
   text-anchor: middle;
-}
+} 
